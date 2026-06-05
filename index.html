@@ -1,375 +1,861 @@
+tml
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>UNO Flip Scorekeeper – Game Master</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        * {
-            box-sizing: border-box;
-            font-family: system-ui, 'Segoe UI', 'Roboto', sans-serif;
+        :root {
+            --purple-50: #f3f0ff;
+            --purple-100: #ede9fe;
+            --purple-200: #ddd6fe;
+            --purple-400: #a78bfa;
+            --purple-500: #8b5cf6;
+            --purple-600: #7c3aed;
+            --purple-700: #6d28d9;
+            --pink-50: #fdf2f8;
+            --pink-100: #fce7f3;
+            --pink-200: #fbcfe8;
+            --pink-400: #f472b6;
+            --pink-500: #ec4899;
+            --coral-400: #fb7185;
+            --coral-500: #f43f5e;
+            --mint-400: #34d399;
+            --mint-500: #10b981;
+            --amber-400: #fbbf24;
+            --amber-500: #f59e0b;
+            --gray-50: #fafaf9;
+            --gray-100: #f5f5f4;
+            --gray-200: #e7e5e4;
+            --gray-300: #d6d3d1;
+            --gray-400: #a8a29e;
+            --gray-500: #78716c;
+            --gray-600: #57534e;
+            --gray-700: #44403c;
+            --gray-800: #292524;
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-xl: 32px;
+            --shadow-soft: 0 4px 24px rgba(139,92,246,0.10);
+            --shadow-card: 0 2px 12px rgba(0,0,0,0.06);
+            --transition: 0.15s cubic-bezier(0.4,0,0.2,1);
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            background: #1a2a32;
-            margin: 0;
-            padding: 20px;
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #f3f0ff 0%, #fdf2f8 50%, #f0fdf4 100%);
             min-height: 100vh;
+            padding: 16px;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
         }
+
         .app-container {
-            max-width: 1200px;
             width: 100%;
-            background: #f5f5f5;
-            border-radius: 32px;
-            box-shadow: 0 20px 35px rgba(0,0,0,0.3);
-            padding: 20px 24px 32px;
+            max-width: 480px;
+            background: #fff;
+            border-radius: var(--radius-xl);
+            box-shadow: 0 8px 40px rgba(139,92,246,0.13);
+            padding: 24px 20px 36px;
+            min-height: 90vh;
         }
-        .view {
-            display: none;
-            animation: fadeIn 0.2s ease;
+
+        .view { display: none; animation: fadeUp 0.22s ease; }
+        .view.active { display: block; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .view.active {
+
+        /* ── HEADER ── */
+        .app-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .app-logo {
+            font-size: 2.6rem;
             display: block;
+            margin-bottom: 4px;
+            animation: pulse 2.5s ease-in-out infinite;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px);}
-            to { opacity: 1; transform: translateY(0);}
+        @keyframes pulse {
+            0%,100% { transform: scale(1); }
+            50% { transform: scale(1.06); }
         }
-        h1, h2, h3 {
-            margin-top: 0;
-            color: #1e2a32;
+        .app-title {
+            font-size: 1.4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--purple-600), var(--pink-500));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
         }
-        .players-list {
+        .app-subtitle {
+            font-size: 0.85rem;
+            color: var(--gray-400);
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        /* ── SECTION LABEL ── */
+        .section-label {
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--gray-400);
+            margin-bottom: 10px;
+        }
+
+        /* ── INPUT ── */
+        .input-row {
             display: flex;
-            flex-wrap: wrap;
-            gap: 14px;
-            margin: 20px 0;
+            gap: 8px;
+            margin-bottom: 16px;
         }
-        .player-card {
-            background: white;
-            border-radius: 24px;
-            padding: 12px 18px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            flex: 1 1 180px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-left: 8px solid;
+        .input-field {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 50px;
+            border: 2px solid var(--gray-200);
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            background: var(--gray-50);
+            outline: none;
+            transition: border-color var(--transition);
         }
-        .player-name {
-            font-weight: bold;
-            font-size: 1.1rem;
+        .input-field:focus {
+            border-color: var(--purple-400);
+            background: var(--purple-50);
         }
-        button {
-            background: #2c3e66;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 40px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.1s linear;
-        }
-        button.danger { background: #b91c1c; }
-        button.secondary { background: #4b5563; }
-        button.warning { background: #e68a2e; }
-        button.success { background: #1d6f2f; }
-        button.small { padding: 5px 12px; font-size: 0.8rem; }
-        button.xsmall { padding: 4px 10px; font-size: 0.75rem; background: #0f5c3e; }
-        button:hover { filter: brightness(1.05); transform: scale(0.97); }
-        .flex-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-            margin: 15px 0;
-        }
-        .preset-players {
-            background: #e9eef3;
-            border-radius: 28px;
-            padding: 16px;
-            margin: 15px 0;
-        }
-        .preset-btn {
-            background: #2c3e66;
-            padding: 6px 16px;
-        }
-        .winner-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin: 20px 0;
-        }
-        .winner-btn {
-            background: #2c3e66;
-            padding: 12px 24px;
-            font-size: 1.1rem;
-        }
-        .winner-btn.selected {
-            background: #fbbf24;
-            color: #1e2a32;
-            box-shadow: 0 0 0 2px #2c3e66;
-        }
-        .card-keyboard {
-            background: #e9eef3;
-            border-radius: 28px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-        .card-btn {
-            background: white;
-            color: #1e2a32;
-            border: 2px solid #cbd5e1;
-            padding: 10px 18px;
-            font-size: 1rem;
-            font-weight: bold;
-        }
-        .card-btn.special {
-            background: #2c3e66;
-            color: white;
-        }
-        .collected-cards {
-            background: #fff3e0;
-            border-radius: 28px;
-            padding: 16px;
-            margin: 20px 0;
-        }
-        .card-tag {
-            background: #2c3e66;
-            color: white;
-            border-radius: 32px;
-            padding: 6px 14px;
+        .input-field::placeholder { color: var(--gray-400); font-weight: 600; }
+
+        /* ── BUTTONS ── */
+        .btn {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            margin: 5px 8px 5px 0;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px 20px;
+            border-radius: 50px;
+            border: none;
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform var(--transition), filter var(--transition), box-shadow var(--transition);
+            text-decoration: none;
         }
-        .card-tag button {
-            background: rgba(255,255,255,0.3);
-            padding: 0px 8px;
+        .btn:hover { filter: brightness(1.06); }
+        .btn:active { transform: scale(0.96); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--purple-500), var(--pink-500));
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(139,92,246,0.35);
+        }
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, var(--coral-400), var(--coral-500));
+            color: #fff;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, var(--mint-400), var(--mint-500));
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(16,185,129,0.3);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, var(--amber-400), var(--amber-500));
+            color: #fff;
+        }
+        .btn-ghost {
+            background: transparent;
+            color: var(--gray-500);
+            border: 2px solid var(--gray-200);
+        }
+        .btn-full { width: 100%; }
+        .btn-sm { padding: 8px 14px; font-size: 0.8rem; }
+        .btn-xs { padding: 5px 10px; font-size: 0.75rem; }
+
+        /* ── PRESET PILLS ── */
+        .preset-section {
+            background: var(--purple-50);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            margin-bottom: 16px;
+        }
+        .preset-label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--purple-600);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        .preset-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .preset-chip {
+            padding: 7px 14px;
+            border-radius: 50px;
+            background: white;
+            border: 2px solid var(--purple-200);
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: var(--purple-600);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        .preset-chip:hover {
+            background: var(--purple-500);
+            color: white;
+            border-color: var(--purple-500);
+            transform: scale(1.04);
+        }
+        .preset-chip:active { transform: scale(0.97); }
+
+        /* ── PLAYER CARDS (LOBBY) ── */
+        .players-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .player-card-lobby {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
+            background: var(--gray-50);
+            border: 2px solid var(--gray-100);
+            transition: all var(--transition);
+        }
+        .player-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 900;
+            flex-shrink: 0;
+            color: white;
+        }
+        .player-name-lobby {
+            flex: 1;
             font-size: 1rem;
+            font-weight: 800;
+            color: var(--gray-800);
+        }
+        .btn-remove {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--gray-100);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: all var(--transition);
+            flex-shrink: 0;
+        }
+        .btn-remove:hover { background: #fee2e2; transform: scale(1.1); }
+
+        .empty-state {
+            text-align: center;
+            padding: 24px;
+            color: var(--gray-400);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .empty-state-icon { font-size: 2rem; display: block; margin-bottom: 6px; }
+
+        /* ── TARGET SCORE ── */
+        .target-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: var(--pink-50);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+        }
+        .target-label {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--pink-500);
+            white-space: nowrap;
+        }
+        .target-select {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 50px;
+            border: 2px solid var(--pink-200);
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--gray-700);
+            background: white;
+            outline: none;
+            cursor: pointer;
+        }
+        .target-custom {
+            width: 100px;
+            padding: 8px 12px;
+            border-radius: 50px;
+            border: 2px solid var(--pink-200);
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--gray-700);
+            background: white;
+            outline: none;
+            display: none;
+        }
+
+        /* ── SECTION VIEW HEADER ── */
+        .view-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .view-title {
+            flex: 1;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--gray-800);
+        }
+
+        /* ── WINNER BUTTONS ── */
+        .winner-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .winner-btn-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 18px;
+            border-radius: var(--radius-md);
+            border: 2.5px solid var(--gray-100);
+            background: white;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: 'Nunito', sans-serif;
+            text-align: left;
+            width: 100%;
+            box-shadow: var(--shadow-card);
+        }
+        .winner-btn-card:hover {
+            border-color: var(--purple-300);
+            background: var(--purple-50);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139,92,246,0.15);
+        }
+        .winner-btn-card:active { transform: scale(0.98); }
+        .winner-btn-name {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--gray-800);
+            flex: 1;
+        }
+        .winner-btn-score {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--gray-400);
+        }
+        .trophy-icon { font-size: 1.3rem; }
+
+        /* ── CARD COLLECT VIEW ── */
+        .side-toggle-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
         }
         .side-toggle {
-            background: #d1d5db;
-            border-radius: 60px;
             display: inline-flex;
+            background: var(--gray-100);
+            border-radius: 50px;
             padding: 4px;
+            gap: 2px;
         }
         .side-option {
-            padding: 6px 20px;
-            border-radius: 60px;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 800;
             cursor: pointer;
-            font-weight: bold;
+            transition: all var(--transition);
+            color: var(--gray-500);
         }
         .side-option.active {
-            background: #f5f5f5;
-            color: #111;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            background: white;
+            color: var(--purple-600);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        .score-table {
-            width: 100%;
-            border-collapse: collapse;
+
+        .collected-panel {
+            background: linear-gradient(135deg, var(--purple-50), var(--pink-50));
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 2px solid var(--purple-100);
         }
-        .score-table th, .score-table td {
-            padding: 12px;
+        .collected-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .collected-title {
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--purple-600);
+        }
+        .points-badge {
+            background: linear-gradient(135deg, var(--purple-500), var(--pink-500));
+            color: white;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 900;
+        }
+        .card-tags-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            min-height: 32px;
+        }
+        .card-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: white;
+            border: 2px solid var(--purple-200);
+            color: var(--purple-700);
+            border-radius: 50px;
+            padding: 5px 10px 5px 12px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            animation: popIn 0.15s ease;
+        }
+        @keyframes popIn {
+            from { transform: scale(0.7); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .card-tag-remove {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--purple-100);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            transition: all var(--transition);
+            color: var(--purple-600);
+            padding: 0;
+            font-weight: 900;
+        }
+        .card-tag-remove:hover { background: var(--coral-400); color: white; }
+
+        .keyboard-section {
+            margin-bottom: 16px;
+        }
+        .keyboard-label {
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--gray-400);
+            margin-bottom: 8px;
+        }
+        .num-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .num-btn {
+            padding: 14px 8px;
+            border-radius: var(--radius-md);
+            background: var(--gray-50);
+            border: 2px solid var(--gray-200);
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: var(--gray-700);
+            cursor: pointer;
+            transition: all var(--transition);
+            text-align: center;
+        }
+        .num-btn:hover {
+            background: var(--purple-100);
+            border-color: var(--purple-300);
+            color: var(--purple-700);
+            transform: scale(1.04);
+        }
+        .num-btn:active { transform: scale(0.96); }
+
+        .action-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .action-btn {
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            background: linear-gradient(135deg, var(--purple-500), var(--pink-500));
+            border: none;
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 800;
+            color: white;
+            cursor: pointer;
+            transition: all var(--transition);
             text-align: left;
-            border-bottom: 1px solid #ddd;
         }
-        .score-table th {
-            background: #e2e8f0;
+        .action-btn:hover {
+            filter: brightness(1.08);
+            transform: translateX(3px);
         }
-        .winner-message {
-            background: #fef9c3;
-            border-radius: 60px;
-            padding: 12px 20px;
-            margin: 15px 0;
-            font-weight: bold;
+        .action-btn:active { transform: scale(0.98); }
+
+        .round-actions {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
         }
-        @media (max-width: 700px) {
-            .app-container { padding: 16px; }
-            .card-btn { padding: 6px 12px; font-size: 0.9rem; }
+
+        /* ── SCOREBOARD ── */
+        .scoreboard-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .player-score-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 10px;
+            border: 2.5px solid var(--gray-100);
+            box-shadow: var(--shadow-card);
+            transition: all var(--transition);
+        }
+        .player-score-card:first-child {
+            border-color: var(--amber-400);
+            background: linear-gradient(135deg, #fffbeb, #fff);
+        }
+        .score-card-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .rank-badge {
+            font-size: 1.2rem;
+            width: 36px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .score-name {
+            flex: 1;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--gray-800);
+        }
+        .score-points {
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: var(--purple-600);
+        }
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: var(--gray-100);
+            border-radius: 50px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 50px;
+            transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+            background: linear-gradient(90deg, var(--purple-400), var(--pink-500));
+        }
+        .progress-fill.leader {
+            background: linear-gradient(90deg, var(--amber-400), var(--coral-400));
+        }
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--gray-400);
+        }
+
+        .winner-banner {
+            background: linear-gradient(135deg, var(--amber-400), var(--coral-400));
+            border-radius: var(--radius-lg);
+            padding: 16px 20px;
+            margin: 16px 0;
+            text-align: center;
+            animation: confetti 0.4s ease;
+        }
+        @keyframes confetti {
+            0% { transform: scale(0.8); opacity: 0; }
+            60% { transform: scale(1.04); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .winner-banner-emoji { font-size: 2rem; display: block; }
+        .winner-banner-name {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: white;
+            display: block;
+        }
+        .winner-banner-sub {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.85);
+            font-weight: 700;
+        }
+
+        .target-notice {
+            background: var(--pink-50);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            margin: 12px 0;
+            text-align: center;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--pink-500);
+            border: 2px solid var(--pink-100);
+        }
+
+        .score-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        /* ── DIVIDER ── */
+        .divider {
+            height: 1px;
+            background: var(--gray-100);
+            margin: 20px 0;
+        }
+
+        /* ── HINT TEXT ── */
+        .hint {
+            font-size: 0.78rem;
+            color: var(--gray-400);
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (min-width: 640px) {
+            body { padding: 24px; align-items: center; min-height: 100vh; }
+            .app-container { min-height: auto; padding: 32px 28px 40px; }
         }
     </style>
 </head>
 <body>
 <div class="app-container" id="app">
+
     <!-- ==================== WIDOK 1: LOBBY ==================== -->
     <div id="lobbyView" class="view active">
-        <h1>🃟 UNO Flip Scorekeeper</h1>
-        <p>Dodaj graczy, ustaw cel i rozpocznij grę.</p>
-        
-        <div class="flex-row">
-            <input type="text" id="newPlayerName" placeholder="Nazwa gracza" style="flex:2; padding:10px; border-radius:60px; border:1px solid #ccc;">
-            <button id="addPlayerBtn">➕ Dodaj</button>
+        <div class="app-header">
+            <span class="app-logo">🃟</span>
+            <div class="app-title">UNO Flip</div>
+            <div class="app-subtitle">Scorekeeper · Game Master</div>
         </div>
 
-        <!-- Predefiniowani gracze -->
-        <div class="preset-players">
-            <strong>⚡ Szybkie dodawanie:</strong>
-            <div class="flex-row" style="margin-top: 10px; gap: 10px;">
-                <button class="preset-btn xsmall" data-preset="Łukasz">+ Łukasz</button>
-                <button class="preset-btn xsmall" data-preset="Andziaks">+ Andziaks</button>
-                <button class="preset-btn xsmall" data-preset="Dajusia">+ Dajusia</button>
-                <button class="preset-btn xsmall" data-preset="Mama">+ Mama</button>
-                <button class="preset-btn xsmall" data-preset="Kinga">+ Kinga</button>
-                <button class="preset-btn xsmall" data-preset="Kamil">+ Kamil</button>
+        <div class="section-label">Gracze</div>
+        <div class="input-row">
+            <input type="text" id="newPlayerName" placeholder="Imię gracza..." class="input-field">
+            <button id="addPlayerBtn" class="btn btn-primary btn-sm">+ Dodaj</button>
+        </div>
+
+        <div class="preset-section">
+            <div class="preset-label">⚡ Szybkie dodawanie</div>
+            <div class="preset-chips">
+                <button class="preset-chip" data-preset="Łukasz">Łukasz</button>
+                <button class="preset-chip" data-preset="Andziaks">Andziaks</button>
+                <button class="preset-chip" data-preset="Dajusia">Dajusia</button>
+                <button class="preset-chip" data-preset="Mama">Mama</button>
+                <button class="preset-chip" data-preset="Kinga">Kinga</button>
+                <button class="preset-chip" data-preset="Kamil">Kamil</button>
             </div>
         </div>
 
-        <div id="lobbyPlayersList" class="players-list"></div>
-        
-        <div class="flex-row">
-            <label style="font-weight:bold;">🏆 Cel punktowy:</label>
-            <select id="targetScoreSelect">
+        <div id="lobbyPlayersList" class="players-grid"></div>
+
+        <div class="target-row">
+            <span class="target-label">🏆 Cel:</span>
+            <select id="targetScoreSelect" class="target-select">
                 <option value="500">500 pkt</option>
                 <option value="1000">1000 pkt</option>
                 <option value="custom">Custom</option>
             </select>
-            <input type="number" id="customTarget" placeholder="Wpisz cel" style="width:120px; display:none;">
+            <input type="number" id="customTarget" placeholder="Ile?" class="target-custom">
         </div>
-        <button id="startGameBtn" style="background:#0f5c3e; padding:12px 24px; font-size:1.1rem;">🎲 Rozpocznij grę</button>
-        <p style="margin-top:20px; font-size:0.8rem;">✔️ Minimum 2 graczy</p>
+
+        <button id="startGameBtn" class="btn btn-primary btn-full" style="font-size:1rem; padding:15px;">
+            🎲 Rozpocznij grę
+        </button>
+        <p class="hint" style="margin-top: 12px;">Minimum 2 graczy</p>
     </div>
 
     <!-- ==================== WIDOK 2: WYBÓR ZWYCIĘZCY ==================== -->
     <div id="winnerSelectView" class="view">
-        <h2>🏆 Kto wygrał tę rundę?</h2>
-        <div id="winnerButtons" class="winner-buttons"></div>
-        <button id="backToLobbyFromWinner" class="secondary small">🏠 Powrót do lobby</button>
+        <div class="view-header">
+            <div class="view-title">🏆 Kto wygrał rundę?</div>
+            <button id="backToLobbyFromWinner" class="btn btn-ghost btn-sm">← Lobby</button>
+        </div>
+        <div id="winnerButtons" class="winner-grid"></div>
     </div>
 
     <!-- ==================== WIDOK 3: ZBIERANIE KART ==================== -->
     <div id="cardCollectView" class="view">
-        <div class="flex-row" style="justify-content: space-between;">
-            <h2 id="collectWinnerName">Zwycięzca: </h2>
+        <div class="view-header">
+            <div id="collectWinnerName" class="view-title"></div>
+        </div>
+
+        <div class="side-toggle-wrap">
             <div class="side-toggle" id="sideToggle">
                 <span data-side="light" class="side-option active">☀️ Light Side</span>
                 <span data-side="dark" class="side-option">🌙 Dark Side</span>
             </div>
         </div>
-        
-        <div class="collected-cards">
-            <strong>📋 Zebrane karty (od przeciwników):</strong>
-            <div id="collectedCardsList" style="margin-top: 12px;"></div>
-            <div style="margin-top: 12px; font-size: 1.2rem;">
-                💰 <strong>Suma punktów:</strong> <span id="currentTotalPoints">0</span>
+
+        <div class="collected-panel">
+            <div class="collected-header">
+                <span class="collected-title">📋 Zebrane karty</span>
+                <span class="points-badge"><span id="currentTotalPoints">0</span> pkt</span>
+            </div>
+            <div class="card-tags-wrap" id="collectedCardsList">
+                <span style="font-size:0.82rem; color:var(--gray-400); font-weight:600;">Brak kart — dodaj poniżej</span>
             </div>
         </div>
 
-        <div class="card-keyboard">
-            <div id="numberButtons" class="flex-row"></div>
-            <div id="actionButtons" class="flex-row"></div>
+        <div class="keyboard-section">
+            <div class="keyboard-label">Liczby</div>
+            <div class="num-grid" id="numberButtons"></div>
+            <div class="keyboard-label" style="margin-top:10px;">Karty akcji</div>
+            <div class="action-grid" id="actionButtons"></div>
         </div>
 
-        <div class="flex-row">
-            <button id="confirmRoundBtn" class="success">✅ Zatwierdź rundę</button>
-            <button id="cancelRoundBtn" class="secondary">Anuluj</button>
+        <div class="round-actions">
+            <button id="confirmRoundBtn" class="btn btn-success">✅ Zatwierdź rundę</button>
+            <button id="cancelRoundBtn" class="btn btn-ghost">Anuluj</button>
         </div>
     </div>
 
     <!-- ==================== WIDOK 4: LEADERBOARD ==================== -->
     <div id="scoreboardView" class="view">
-        <div class="flex-row" style="justify-content: space-between;">
-            <h2>📊 Tablica wyników</h2>
-            <button id="resetScoresBtn" class="warning small">🔄 Resetuj wyniki</button>
+        <div class="scoreboard-top">
+            <div class="view-title">📊 Tablica wyników</div>
+            <button id="resetScoresBtn" class="btn btn-warning btn-sm">🔄 Reset wyników</button>
         </div>
+
         <div id="scoreTable"></div>
         <div id="gameWinnerMessage"></div>
-        <div class="flex-row">
-            <button id="newRoundBtn" style="background:#1f6392;">➕ Nowa runda</button>
-            <button id="fullResetBtn" class="danger">❌ Całkowity reset (gracze)</button>
+
+        <div class="score-actions">
+            <button id="newRoundBtn" class="btn btn-primary">➕ Nowa runda</button>
+            <button id="fullResetBtn" class="btn btn-danger btn-sm">❌ Reset graczy</button>
         </div>
     </div>
+
 </div>
 
 <script>
-    // ---------- PUNKTACJA (zgodna z instrukcją UNO Flip) ----------
     const POINTS = {
-        light: {
-            number: (v) => v,
-            draw_one: 10,
-            reverse: 20,
-            skip: 20,
-            flip: 20,
-            wild: 40,
-            wild_draw_two: 50
-        },
-        dark: {
-            number: (v) => v,
-            draw_five: 20,
-            reverse: 20,
-            skip_everyone: 30,
-            flip: 20,
-            wild: 40,
-            wild_draw_color: 60
-        }
+        light: { number: (v) => v, draw_one: 10, reverse: 20, skip: 20, flip: 20, wild: 40, wild_draw_two: 50 },
+        dark:  { number: (v) => v, draw_five: 20, reverse: 20, skip_everyone: 30, flip: 20, wild: 40, wild_draw_color: 60 }
     };
-
     const ACTIONS = {
-        light: ['draw_one', 'reverse', 'skip', 'flip', 'wild', 'wild_draw_two'],
-        dark: ['draw_five', 'reverse', 'skip_everyone', 'flip', 'wild', 'wild_draw_color']
+        light: ['draw_one','reverse','skip','flip','wild','wild_draw_two'],
+        dark:  ['draw_five','reverse','skip_everyone','flip','wild','wild_draw_color']
     };
-
     const ACTION_NAMES = {
-        draw_one: 'Draw One (+10)',
-        draw_five: 'Draw Five (+20)',
-        reverse: 'Reverse (+20)',
-        skip: 'Skip (+20)',
-        skip_everyone: 'Skip Everyone (+30)',
-        flip: 'Flip (+20)',
-        wild: 'Wild (+40)',
-        wild_draw_two: 'Wild Draw Two (+50)',
-        wild_draw_color: 'Wild Draw Color (+60)'
+        draw_one: 'Draw One +10', draw_five: 'Draw Five +20',
+        reverse: 'Reverse +20', skip: 'Skip +20',
+        skip_everyone: 'Skip Everyone +30', flip: 'Flip +20',
+        wild: 'Wild +40', wild_draw_two: 'Wild Draw Two +50',
+        wild_draw_color: 'Wild Draw Color +60'
     };
 
-    // ---------- STAN GRY ----------
-    let gameState = {
-        targetScore: 500,
-        players: [],
-        currentWinnerId: null,
-        currentSide: 'light',
-        currentCards: []
-    };
+    const PLAYER_COLORS = [
+        '#8b5cf6','#ec4899','#f97316','#10b981',
+        '#3b82f6','#f59e0b','#ef4444','#06b6d4'
+    ];
+
+    let gameState = { targetScore: 500, players: [], currentWinnerId: null, currentSide: 'light', currentCards: [] };
     let nextId = 1;
-    const colorPalette = ['#f97316', '#3b82f6', '#10b981', '#eab308', '#ec489a', '#8b5cf6', '#ef4444', '#06b6d4'];
 
-    // ---------- POMOCNICZE ----------
     function saveToLocal() {
-        localStorage.setItem('unoFlipScoreV3', JSON.stringify({
-            players: gameState.players,
-            targetScore: gameState.targetScore,
-            nextId: nextId
-        }));
+        localStorage.setItem('unoFlipScoreV3', JSON.stringify({ players: gameState.players, targetScore: gameState.targetScore, nextId }));
     }
-
     function loadFromLocal() {
-        const data = localStorage.getItem('unoFlipScoreV3');
-        if (data) {
-            try {
-                const parsed = JSON.parse(data);
-                gameState.players = parsed.players || [];
-                gameState.targetScore = parsed.targetScore || 500;
-                nextId = parsed.nextId || 1;
+        try {
+            const data = localStorage.getItem('unoFlipScoreV3');
+            if (data) {
+                const p = JSON.parse(data);
+                gameState.players = p.players || [];
+                gameState.targetScore = p.targetScore || 500;
+                nextId = p.nextId || 1;
                 if (gameState.players.length) renderLobbyPlayers();
-            } catch(e) {}
-        }
+            }
+        } catch(e) {}
     }
 
-    function generatePlayerColor(index) {
-        return colorPalette[index % colorPalette.length];
+    function getInitials(name) {
+        return name.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
     }
 
     function addPlayerToState(name) {
-        if (!name || name.trim() === "") return false;
+        if (!name || !name.trim()) return false;
         const trimmed = name.trim();
         if (gameState.players.some(p => p.name === trimmed)) return false;
-        const newId = (nextId++).toString();
         gameState.players.push({
-            id: newId,
+            id: (nextId++).toString(),
             name: trimmed,
-            color: generatePlayerColor(gameState.players.length),
+            color: PLAYER_COLORS[gameState.players.length % PLAYER_COLORS.length],
             totalScore: 0
         });
         renderLobbyPlayers();
@@ -378,33 +864,36 @@
     }
 
     function getCardPoints(card, side) {
-        if (card.type === 'number') {
-            return POINTS[side].number(card.value);
-        } else {
-            return POINTS[side][card.actionName] || 0;
-        }
+        return card.type === 'number' ? POINTS[side].number(card.value) : (POINTS[side][card.actionName] || 0);
     }
 
     function recalcTotalPoints() {
-        const total = gameState.currentCards.reduce((sum, card) => sum + getCardPoints(card, gameState.currentSide), 0);
+        const total = gameState.currentCards.reduce((sum, c) => sum + getCardPoints(c, gameState.currentSide), 0);
         document.getElementById('currentTotalPoints').innerText = total;
         return total;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
     }
 
     function renderCollectedCards() {
         const container = document.getElementById('collectedCardsList');
         if (!container) return;
+        if (!gameState.currentCards.length) {
+            container.innerHTML = '<span style="font-size:0.82rem; color:var(--gray-400); font-weight:600;">Brak kart — dodaj poniżej</span>';
+            recalcTotalPoints();
+            return;
+        }
         container.innerHTML = gameState.currentCards.map((card, idx) => {
-            let label = '';
-            if (card.type === 'number') label = `${card.value}`;
-            else label = ACTION_NAMES[card.actionName] || card.actionName;
-            return `<span class="card-tag">${label} <button class="remove-card-btn" data-index="${idx}">✖️</button></span>`;
+            const label = card.type === 'number' ? card.value : (ACTION_NAMES[card.actionName] || card.actionName);
+            return `<span class="card-tag">${label}<button class="card-tag-remove remove-card-btn" data-index="${idx}">✕</button></span>`;
         }).join('');
         recalcTotalPoints();
-        document.querySelectorAll('.remove-card-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const idx = parseInt(btn.getAttribute('data-index'));
-                gameState.currentCards.splice(idx, 1);
+        container.querySelectorAll('.remove-card-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                gameState.currentCards.splice(parseInt(btn.getAttribute('data-index')), 1);
                 renderCollectedCards();
             });
         });
@@ -415,24 +904,23 @@
         renderCollectedCards();
     }
 
-    // ---------- RENDER LOBBY ----------
     function renderLobbyPlayers() {
         const container = document.getElementById('lobbyPlayersList');
         if (!container) return;
-        if (gameState.players.length === 0) {
-            container.innerHTML = '<p style="color:gray;">Brak graczy – dodaj przynajmniej dwóch</p>';
+        if (!gameState.players.length) {
+            container.innerHTML = `<div class="empty-state"><span class="empty-state-icon">👥</span>Dodaj graczy, by zacząć!</div>`;
             return;
         }
         container.innerHTML = gameState.players.map(p => `
-            <div class="player-card" style="border-left-color: ${p.color}">
-                <span class="player-name">${escapeHtml(p.name)}</span>
-                <button class="small remove-player-btn" data-id="${p.id}">🗑️</button>
+            <div class="player-card-lobby">
+                <div class="player-avatar" style="background:${p.color}">${escapeHtml(getInitials(p.name))}</div>
+                <span class="player-name-lobby">${escapeHtml(p.name)}</span>
+                <button class="btn-remove remove-player-btn" data-id="${p.id}" title="Usuń">✕</button>
             </div>
         `).join('');
-        document.querySelectorAll('.remove-player-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = btn.getAttribute('data-id');
-                gameState.players = gameState.players.filter(p => p.id != id);
+        container.querySelectorAll('.remove-player-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                gameState.players = gameState.players.filter(p => p.id !== btn.getAttribute('data-id'));
                 renderLobbyPlayers();
                 saveToLocal();
             });
@@ -443,12 +931,16 @@
         const container = document.getElementById('winnerButtons');
         if (!container) return;
         container.innerHTML = gameState.players.map(p => `
-            <button class="winner-btn" data-id="${p.id}">🏆 ${escapeHtml(p.name)}</button>
+            <button class="winner-btn-card" data-id="${p.id}">
+                <div class="player-avatar" style="background:${p.color}">${escapeHtml(getInitials(p.name))}</div>
+                <span class="winner-btn-name">${escapeHtml(p.name)}</span>
+                <span class="winner-btn-score">${p.totalScore} pkt</span>
+                <span class="trophy-icon">🏆</span>
+            </button>
         `).join('');
-        document.querySelectorAll('.winner-btn').forEach(btn => {
+        container.querySelectorAll('.winner-btn-card').forEach(btn => {
             btn.addEventListener('click', () => {
-                const winnerId = btn.getAttribute('data-id');
-                gameState.currentWinnerId = winnerId;
+                gameState.currentWinnerId = btn.getAttribute('data-id');
                 gameState.currentCards = [];
                 gameState.currentSide = 'light';
                 showCardCollectView();
@@ -457,202 +949,161 @@
     }
 
     function renderCardKeyboard() {
-        const numberContainer = document.getElementById('numberButtons');
+        const numContainer = document.getElementById('numberButtons');
         const actionContainer = document.getElementById('actionButtons');
-        const side = gameState.currentSide;
-        
-        numberContainer.innerHTML = '';
+        numContainer.innerHTML = '';
         for (let i = 1; i <= 9; i++) {
             const btn = document.createElement('button');
-            btn.innerText = i;
-            btn.classList.add('card-btn');
+            btn.className = 'num-btn';
+            btn.textContent = i;
             btn.onclick = () => addCard({ type: 'number', value: i });
-            numberContainer.appendChild(btn);
+            numContainer.appendChild(btn);
         }
-        
         actionContainer.innerHTML = '';
-        const actions = ACTIONS[side];
-        actions.forEach(action => {
+        ACTIONS[gameState.currentSide].forEach(action => {
             const btn = document.createElement('button');
-            btn.innerText = ACTION_NAMES[action] || action;
-            btn.classList.add('card-btn', 'special');
+            btn.className = 'action-btn';
+            btn.textContent = ACTION_NAMES[action] || action;
             btn.onclick = () => addCard({ type: 'action', actionName: action });
             actionContainer.appendChild(btn);
         });
     }
 
-    // ---------- WIDOKI ----------
-    function showLobby() {
+    /* ── VIEWS ── */
+    function showView(id) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById('lobbyView').classList.add('active');
-        renderLobbyPlayers();
+        document.getElementById(id).classList.add('active');
     }
+    function showLobby() { renderLobbyPlayers(); showView('lobbyView'); }
 
     function showWinnerSelect() {
-        if (gameState.players.length < 2) {
-            alert("Dodaj przynajmniej 2 graczy w lobby.");
-            showLobby();
-            return;
-        }
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById('winnerSelectView').classList.add('active');
+        if (gameState.players.length < 2) { alert("Dodaj przynajmniej 2 graczy."); showLobby(); return; }
         renderWinnerButtons();
+        showView('winnerSelectView');
     }
 
     function showCardCollectView() {
-        const winner = gameState.players.find(p => p.id == gameState.currentWinnerId);
+        const winner = gameState.players.find(p => p.id === gameState.currentWinnerId);
         if (!winner) return;
-        document.getElementById('collectWinnerName').innerHTML = `🏆 Zwycięzca: ${escapeHtml(winner.name)}`;
-        
+        document.getElementById('collectWinnerName').innerHTML = `🏆 ${escapeHtml(winner.name)}`;
         const lightOpt = document.querySelector('[data-side="light"]');
         const darkOpt = document.querySelector('[data-side="dark"]');
-        const updateSideUI = () => {
-            if (gameState.currentSide === 'light') {
-                lightOpt.classList.add('active');
-                darkOpt.classList.remove('active');
-            } else {
-                darkOpt.classList.add('active');
-                lightOpt.classList.remove('active');
-            }
+        const updateSide = () => {
+            lightOpt.classList.toggle('active', gameState.currentSide === 'light');
+            darkOpt.classList.toggle('active', gameState.currentSide === 'dark');
             renderCardKeyboard();
             renderCollectedCards();
         };
-        lightOpt.onclick = () => { gameState.currentSide = 'light'; updateSideUI(); };
-        darkOpt.onclick = () => { gameState.currentSide = 'dark'; updateSideUI(); };
-        updateSideUI();
-        
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById('cardCollectView').classList.add('active');
+        lightOpt.onclick = () => { gameState.currentSide = 'light'; updateSide(); };
+        darkOpt.onclick = () => { gameState.currentSide = 'dark'; updateSide(); };
+        updateSide();
+        showView('cardCollectView');
     }
 
     function finishRound() {
         const totalPoints = recalcTotalPoints();
-        const winnerIndex = gameState.players.findIndex(p => p.id == gameState.currentWinnerId);
-        if (winnerIndex !== -1) {
-            gameState.players[winnerIndex].totalScore += totalPoints;
-        }
+        const idx = gameState.players.findIndex(p => p.id === gameState.currentWinnerId);
+        if (idx !== -1) gameState.players[idx].totalScore += totalPoints;
         saveToLocal();
         showScoreboard();
     }
 
     function showScoreboard() {
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById('scoreboardView').classList.add('active');
         renderScoreboard();
+        showView('scoreboardView');
     }
 
     function renderScoreboard() {
         const sorted = [...gameState.players].sort((a,b) => b.totalScore - a.totalScore);
         const target = gameState.targetScore;
-        let winnerName = null;
-        for (let p of sorted) if (p.totalScore >= target) { winnerName = p.name; break; }
-        
-        const container = document.getElementById('scoreTable');
-        container.innerHTML = `
-            <table class="score-table">
-                <thead>
-                    <tr><th>#</th><th>Gracz</th><th>Wynik</th></tr>
-                </thead>
-                <tbody>
-                    ${sorted.map((p, idx) => `
-                        <tr>
-                            <td>${idx+1}</td>
-                            <td><span style="display:inline-block; width:14px; height:14px; background:${p.color}; border-radius:50%; margin-right:8px;"></span>${escapeHtml(p.name)}</td>
-                            <td><b>${p.totalScore}</b> pkt</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
+        const RANK_ICONS = ['🥇','🥈','🥉'];
+        const winnerPlayer = sorted.find(p => p.totalScore >= target);
+
+        document.getElementById('scoreTable').innerHTML = sorted.map((p, idx) => {
+            const pct = Math.min(100, Math.round((p.totalScore / target) * 100));
+            const isLeader = idx === 0 && p.totalScore > 0;
+            return `
+            <div class="player-score-card">
+                <div class="score-card-top">
+                    <span class="rank-badge">${RANK_ICONS[idx] || (idx+1)}</span>
+                    <div class="player-avatar" style="background:${p.color}; width:32px; height:32px; font-size:0.75rem;">${escapeHtml(getInitials(p.name))}</div>
+                    <span class="score-name">${escapeHtml(p.name)}</span>
+                    <span class="score-points">${p.totalScore} pkt</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill ${isLeader ? 'leader' : ''}" style="width:${pct}%"></div>
+                </div>
+                <div class="progress-label">
+                    <span>0</span>
+                    <span>${pct}% do celu</span>
+                    <span>${target}</span>
+                </div>
+            </div>`;
+        }).join('');
+
         const msgDiv = document.getElementById('gameWinnerMessage');
-        if (winnerName) {
-            msgDiv.innerHTML = `<div class="winner-message">🏆 ZWYCIĘZCA: ${escapeHtml(winnerName)} 🏆<br>Osiągnięto ${target} pkt!</div>`;
+        if (winnerPlayer) {
+            msgDiv.innerHTML = `
+                <div class="winner-banner">
+                    <span class="winner-banner-emoji">🎉</span>
+                    <span class="winner-banner-name">${escapeHtml(winnerPlayer.name)} wygrywa!</span>
+                    <span class="winner-banner-sub">Osiągnięto ${target} pkt!</span>
+                </div>`;
         } else {
-            msgDiv.innerHTML = `<div class="winner-message">🎯 Cel: ${target} pkt – jeszcze nikt nie przekroczył.</div>`;
+            msgDiv.innerHTML = `<div class="target-notice">🎯 Cel: <strong>${target} pkt</strong> — gra trwa!</div>`;
         }
     }
 
-    function resetScoresKeepPlayers() {
-        if (confirm('Reset wyników? Gracze pozostaną na liście, punkty zostaną wyzerowane.')) {
-            for (let p of gameState.players) p.totalScore = 0;
-            saveToLocal();
-            renderScoreboard();
-            showScoreboard();
-        }
-    }
-
-    function fullReset() {
-        if (confirm('Czy na pewno chcesz usunąć wszystkich graczy i rozpocząć od nowa?')) {
-            gameState.players = [];
-            gameState.targetScore = 500;
-            gameState.currentWinnerId = null;
-            gameState.currentCards = [];
-            gameState.currentSide = 'light';
-            nextId = 1;
-            saveToLocal();
-            showLobby();
-        }
-    }
-
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-
-    // ---------- EVENTY ----------
+    /* ── EVENT LISTENERS ── */
     document.getElementById('addPlayerBtn').addEventListener('click', () => {
-        const nameInput = document.getElementById('newPlayerName');
-        addPlayerToState(nameInput.value);
-        nameInput.value = "";
+        const inp = document.getElementById('newPlayerName');
+        if (addPlayerToState(inp.value)) inp.value = '';
     });
-
-    // Predefiniowani gracze
-    document.querySelectorAll('.preset-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const presetName = btn.getAttribute('data-preset');
-            addPlayerToState(presetName);
-        });
+    document.getElementById('newPlayerName').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { document.getElementById('addPlayerBtn').click(); }
     });
-
-    document.getElementById('targetScoreSelect').addEventListener('change', (e) => {
-        const customInput = document.getElementById('customTarget');
+    document.querySelectorAll('.preset-chip').forEach(btn => {
+        btn.addEventListener('click', () => addPlayerToState(btn.getAttribute('data-preset')));
+    });
+    document.getElementById('targetScoreSelect').addEventListener('change', e => {
+        const custom = document.getElementById('customTarget');
         if (e.target.value === 'custom') {
-            customInput.style.display = 'inline-block';
-            gameState.targetScore = parseInt(customInput.value) || 500;
+            custom.style.display = 'inline-block';
+            gameState.targetScore = parseInt(custom.value) || 500;
         } else {
-            customInput.style.display = 'none';
+            custom.style.display = 'none';
             gameState.targetScore = parseInt(e.target.value);
         }
     });
-
-    document.getElementById('customTarget').addEventListener('input', (e) => {
+    document.getElementById('customTarget').addEventListener('input', e => {
         if (document.getElementById('targetScoreSelect').value === 'custom')
             gameState.targetScore = parseInt(e.target.value) || 500;
     });
-
     document.getElementById('startGameBtn').addEventListener('click', () => {
         if (gameState.players.length < 2) return alert("Dodaj co najmniej 2 graczy");
-        if (gameState.targetScore <= 0) gameState.targetScore = 500;
         saveToLocal();
         showWinnerSelect();
     });
-
     document.getElementById('confirmRoundBtn').addEventListener('click', finishRound);
     document.getElementById('cancelRoundBtn').addEventListener('click', showScoreboard);
     document.getElementById('newRoundBtn').addEventListener('click', showWinnerSelect);
-    document.getElementById('resetScoresBtn').addEventListener('click', resetScoresKeepPlayers);
-    document.getElementById('fullResetBtn').addEventListener('click', fullReset);
+    document.getElementById('resetScoresBtn').addEventListener('click', () => {
+        if (confirm('Wyzerować wyniki? Gracze pozostaną.')) {
+            gameState.players.forEach(p => p.totalScore = 0);
+            saveToLocal(); renderScoreboard();
+        }
+    });
+    document.getElementById('fullResetBtn').addEventListener('click', () => {
+        if (confirm('Usunąć wszystkich graczy i zacząć od nowa?')) {
+            Object.assign(gameState, { players: [], targetScore: 500, currentWinnerId: null, currentCards: [], currentSide: 'light' });
+            nextId = 1; saveToLocal(); showLobby();
+        }
+    });
     document.getElementById('backToLobbyFromWinner').addEventListener('click', showLobby);
 
-    // ---------- START ----------
+    /* ── INIT ── */
     loadFromLocal();
-    if (gameState.players.length === 0) showLobby();
-    else showScoreboard();
+    if (gameState.players.length === 0) showLobby(); else showScoreboard();
 </script>
 </body>
 </html>
