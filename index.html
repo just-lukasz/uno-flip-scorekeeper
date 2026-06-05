@@ -669,14 +669,12 @@
             margin-top: 16px;
         }
 
-        /* ── DIVIDER ── */
         .divider {
             height: 1px;
             background: var(--gray-100);
             margin: 20px 0;
         }
 
-        /* ── HINT TEXT ── */
         .hint {
             font-size: 0.78rem;
             color: var(--gray-400);
@@ -684,7 +682,6 @@
             text-align: center;
         }
 
-        /* ── RESPONSIVE ── */
         @media (min-width: 640px) {
             body { padding: 24px; align-items: center; min-height: 100vh; }
             .app-container { min-height: auto; padding: 32px 28px 40px; }
@@ -708,16 +705,9 @@
             <button id="addPlayerBtn" class="btn btn-primary btn-sm">+ Dodaj</button>
         </div>
 
-        <div class="preset-section">
+        <div class="preset-section" id="presetSection">
             <div class="preset-label">⚡ Szybkie dodawanie</div>
-            <div class="preset-chips">
-                <button class="preset-chip" data-preset="Łukasz">Łukasz</button>
-                <button class="preset-chip" data-preset="Andziaks">Andziaks</button>
-                <button class="preset-chip" data-preset="Dajusia">Dajusia</button>
-                <button class="preset-chip" data-preset="Mama">Mama</button>
-                <button class="preset-chip" data-preset="Kinga">Kinga</button>
-                <button class="preset-chip" data-preset="Kamil">Kamil</button>
-            </div>
+            <div class="preset-chips" id="presetChipsContainer"></div>
         </div>
 
         <div id="lobbyPlayersList" class="players-grid"></div>
@@ -818,10 +808,9 @@
         wild_draw_color: 'Wild Draw Color +60'
     };
 
-    const PLAYER_COLORS = [
-        '#8b5cf6','#ec4899','#f97316','#10b981',
-        '#3b82f6','#f59e0b','#ef4444','#06b6d4'
-    ];
+    // Lista wszystkich dostępnych presetów (w kolejności wyświetlania)
+    const ALL_PRESETS = ['Łukasz', 'Andziaks', 'Dajusia', 'Mama', 'Kinga', 'Kamil'];
+    const PLAYER_COLORS = ['#8b5cf6','#ec4899','#f97316','#10b981','#3b82f6','#f59e0b','#ef4444','#06b6d4'];
 
     let gameState = { targetScore: 500, players: [], currentWinnerId: null, currentSide: 'light', currentCards: [] };
     let nextId = 1;
@@ -838,6 +827,7 @@
                 gameState.targetScore = p.targetScore || 500;
                 nextId = p.nextId || 1;
                 if (gameState.players.length) renderLobbyPlayers();
+                renderPresetChips(); // odśwież presety po załadowaniu
             }
         } catch(e) {}
     }
@@ -857,8 +847,44 @@
             totalScore: 0
         });
         renderLobbyPlayers();
+        renderPresetChips(); // ODŚWIEŻ PRESETY – dodany gracz znika z listy
         saveToLocal();
         return true;
+    }
+
+    function removePlayerById(id) {
+        gameState.players = gameState.players.filter(p => p.id !== id);
+        renderLobbyPlayers();
+        renderPresetChips(); // ODŚWIEŻ PRESETY – usunięty gracz wraca na listę
+        saveToLocal();
+    }
+
+    // RENDEROWANIE DYNAMICZNYCH PRESETÓW
+    function renderPresetChips() {
+        const container = document.getElementById('presetChipsContainer');
+        if (!container) return;
+        
+        // Pobierz nazwy już dodanych graczy
+        const addedNames = gameState.players.map(p => p.name);
+        
+        // Filtruj presety – pokaż tylko tych, których jeszcze nie ma
+        const availablePresets = ALL_PRESETS.filter(preset => !addedNames.includes(preset));
+        
+        if (availablePresets.length === 0) {
+            container.innerHTML = '<span style="font-size:0.75rem; color:var(--gray-400);">Wszyscy dodani ✨</span>';
+            return;
+        }
+        
+        container.innerHTML = availablePresets.map(preset => `
+            <button class="preset-chip" data-preset="${preset.replace(/[&<>"']/g, '')}">${preset}</button>
+        `).join('');
+        
+        // Przypisz eventy do nowych przycisków
+        container.querySelectorAll('.preset-chip').forEach(btn => {
+            btn.addEventListener('click', () => {
+                addPlayerToState(btn.getAttribute('data-preset'));
+            });
+        });
     }
 
     function getCardPoints(card, side) {
@@ -918,9 +944,7 @@
         `).join('');
         container.querySelectorAll('.remove-player-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                gameState.players = gameState.players.filter(p => p.id !== btn.getAttribute('data-id'));
-                renderLobbyPlayers();
-                saveToLocal();
+                removePlayerById(btn.getAttribute('data-id'));
             });
         });
     }
@@ -967,19 +991,16 @@
         });
     }
 
-    /* ── VIEWS ── */
     function showView(id) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
-    function showLobby() { renderLobbyPlayers(); showView('lobbyView'); }
-
+    function showLobby() { renderLobbyPlayers(); renderPresetChips(); showView('lobbyView'); }
     function showWinnerSelect() {
         if (gameState.players.length < 2) { alert("Dodaj przynajmniej 2 graczy."); showLobby(); return; }
         renderWinnerButtons();
         showView('winnerSelectView');
     }
-
     function showCardCollectView() {
         const winner = gameState.players.find(p => p.id === gameState.currentWinnerId);
         if (!winner) return;
@@ -997,7 +1018,6 @@
         updateSide();
         showView('cardCollectView');
     }
-
     function finishRound() {
         const totalPoints = recalcTotalPoints();
         const idx = gameState.players.findIndex(p => p.id === gameState.currentWinnerId);
@@ -1005,12 +1025,10 @@
         saveToLocal();
         showScoreboard();
     }
-
     function showScoreboard() {
         renderScoreboard();
         showView('scoreboardView');
     }
-
     function renderScoreboard() {
         const sorted = [...gameState.players].sort((a,b) => b.totalScore - a.totalScore);
         const target = gameState.targetScore;
@@ -1052,16 +1070,13 @@
         }
     }
 
-    /* ── EVENT LISTENERS ── */
+    // EVENT LISTENERS
     document.getElementById('addPlayerBtn').addEventListener('click', () => {
         const inp = document.getElementById('newPlayerName');
         if (addPlayerToState(inp.value)) inp.value = '';
     });
     document.getElementById('newPlayerName').addEventListener('keydown', e => {
         if (e.key === 'Enter') { document.getElementById('addPlayerBtn').click(); }
-    });
-    document.querySelectorAll('.preset-chip').forEach(btn => {
-        btn.addEventListener('click', () => addPlayerToState(btn.getAttribute('data-preset')));
     });
     document.getElementById('targetScoreSelect').addEventListener('change', e => {
         const custom = document.getElementById('customTarget');
@@ -1094,12 +1109,14 @@
     document.getElementById('fullResetBtn').addEventListener('click', () => {
         if (confirm('Usunąć wszystkich graczy i zacząć od nowa?')) {
             Object.assign(gameState, { players: [], targetScore: 500, currentWinnerId: null, currentCards: [], currentSide: 'light' });
-            nextId = 1; saveToLocal(); showLobby();
+            nextId = 1; 
+            saveToLocal(); 
+            renderPresetChips(); // przywróć pełną listę presetów
+            showLobby();
         }
     });
     document.getElementById('backToLobbyFromWinner').addEventListener('click', showLobby);
 
-    /* ── INIT ── */
     loadFromLocal();
     if (gameState.players.length === 0) showLobby(); else showScoreboard();
 </script>
