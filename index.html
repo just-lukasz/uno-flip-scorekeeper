@@ -77,6 +77,7 @@
         button.warning { background: #e68a2e; }
         button.success { background: #1d6f2f; }
         button.small { padding: 5px 12px; font-size: 0.8rem; }
+        button.xsmall { padding: 4px 10px; font-size: 0.75rem; background: #0f5c3e; }
         button:hover { filter: brightness(1.05); transform: scale(0.97); }
         .flex-row {
             display: flex;
@@ -84,6 +85,16 @@
             gap: 12px;
             align-items: center;
             margin: 15px 0;
+        }
+        .preset-players {
+            background: #e9eef3;
+            border-radius: 28px;
+            padding: 16px;
+            margin: 15px 0;
+        }
+        .preset-btn {
+            background: #2c3e66;
+            padding: 6px 16px;
         }
         .winner-buttons {
             display: flex;
@@ -188,11 +199,27 @@
     <div id="lobbyView" class="view active">
         <h1>🃟 UNO Flip Scorekeeper</h1>
         <p>Dodaj graczy, ustaw cel i rozpocznij grę.</p>
+        
         <div class="flex-row">
             <input type="text" id="newPlayerName" placeholder="Nazwa gracza" style="flex:2; padding:10px; border-radius:60px; border:1px solid #ccc;">
             <button id="addPlayerBtn">➕ Dodaj</button>
         </div>
+
+        <!-- Predefiniowani gracze -->
+        <div class="preset-players">
+            <strong>⚡ Szybkie dodawanie:</strong>
+            <div class="flex-row" style="margin-top: 10px; gap: 10px;">
+                <button class="preset-btn xsmall" data-preset="Łukasz">+ Łukasz</button>
+                <button class="preset-btn xsmall" data-preset="Andziaks">+ Andziaks</button>
+                <button class="preset-btn xsmall" data-preset="Dajusia">+ Dajusia</button>
+                <button class="preset-btn xsmall" data-preset="Mama">+ Mama</button>
+                <button class="preset-btn xsmall" data-preset="Kinga">+ Kinga</button>
+                <button class="preset-btn xsmall" data-preset="Kamil">+ Kamil</button>
+            </div>
+        </div>
+
         <div id="lobbyPlayersList" class="players-list"></div>
+        
         <div class="flex-row">
             <label style="font-weight:bold;">🏆 Cel punktowy:</label>
             <select id="targetScoreSelect">
@@ -280,7 +307,6 @@
         }
     };
 
-    // Akcje dostępne dla Light i Dark
     const ACTIONS = {
         light: ['draw_one', 'reverse', 'skip', 'flip', 'wild', 'wild_draw_two'],
         dark: ['draw_five', 'reverse', 'skip_everyone', 'flip', 'wild', 'wild_draw_color']
@@ -301,17 +327,17 @@
     // ---------- STAN GRY ----------
     let gameState = {
         targetScore: 500,
-        players: [],        // { id, name, color, totalScore }
+        players: [],
         currentWinnerId: null,
         currentSide: 'light',
-        currentCards: []    // lista kart dla zwycięzcy { type, value, actionName }
+        currentCards: []
     };
     let nextId = 1;
     const colorPalette = ['#f97316', '#3b82f6', '#10b981', '#eab308', '#ec489a', '#8b5cf6', '#ef4444', '#06b6d4'];
 
     // ---------- POMOCNICZE ----------
     function saveToLocal() {
-        localStorage.setItem('unoFlipScoreV2', JSON.stringify({
+        localStorage.setItem('unoFlipScoreV3', JSON.stringify({
             players: gameState.players,
             targetScore: gameState.targetScore,
             nextId: nextId
@@ -319,7 +345,7 @@
     }
 
     function loadFromLocal() {
-        const data = localStorage.getItem('unoFlipScoreV2');
+        const data = localStorage.getItem('unoFlipScoreV3');
         if (data) {
             try {
                 const parsed = JSON.parse(data);
@@ -333,6 +359,22 @@
 
     function generatePlayerColor(index) {
         return colorPalette[index % colorPalette.length];
+    }
+
+    function addPlayerToState(name) {
+        if (!name || name.trim() === "") return false;
+        const trimmed = name.trim();
+        if (gameState.players.some(p => p.name === trimmed)) return false;
+        const newId = (nextId++).toString();
+        gameState.players.push({
+            id: newId,
+            name: trimmed,
+            color: generatePlayerColor(gameState.players.length),
+            totalScore: 0
+        });
+        renderLobbyPlayers();
+        saveToLocal();
+        return true;
     }
 
     function getCardPoints(card, side) {
@@ -419,7 +461,6 @@
         const actionContainer = document.getElementById('actionButtons');
         const side = gameState.currentSide;
         
-        // Przyciski numeryczne 1-9
         numberContainer.innerHTML = '';
         for (let i = 1; i <= 9; i++) {
             const btn = document.createElement('button');
@@ -429,7 +470,6 @@
             numberContainer.appendChild(btn);
         }
         
-        // Przyciski akcji
         actionContainer.innerHTML = '';
         const actions = ACTIONS[side];
         actions.forEach(action => {
@@ -464,7 +504,6 @@
         if (!winner) return;
         document.getElementById('collectWinnerName').innerHTML = `🏆 Zwycięzca: ${escapeHtml(winner.name)}`;
         
-        // Ustawienie przełącznika Light/Dark
         const lightOpt = document.querySelector('[data-side="light"]');
         const darkOpt = document.querySelector('[data-side="dark"]');
         const updateSideUI = () => {
@@ -565,21 +604,19 @@
         });
     }
 
-    // ---------- EVENTY I START ----------
+    // ---------- EVENTY ----------
     document.getElementById('addPlayerBtn').addEventListener('click', () => {
         const nameInput = document.getElementById('newPlayerName');
-        const name = nameInput.value.trim();
-        if (name === "") return alert("Wpisz nazwę gracza");
-        const newId = (nextId++).toString();
-        gameState.players.push({
-            id: newId,
-            name: name,
-            color: generatePlayerColor(gameState.players.length),
-            totalScore: 0
-        });
+        addPlayerToState(nameInput.value);
         nameInput.value = "";
-        renderLobbyPlayers();
-        saveToLocal();
+    });
+
+    // Predefiniowani gracze
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const presetName = btn.getAttribute('data-preset');
+            addPlayerToState(presetName);
+        });
     });
 
     document.getElementById('targetScoreSelect').addEventListener('change', (e) => {
@@ -612,6 +649,7 @@
     document.getElementById('fullResetBtn').addEventListener('click', fullReset);
     document.getElementById('backToLobbyFromWinner').addEventListener('click', showLobby);
 
+    // ---------- START ----------
     loadFromLocal();
     if (gameState.players.length === 0) showLobby();
     else showScoreboard();
