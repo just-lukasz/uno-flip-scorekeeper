@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>UNO Flip Scorekeeper – Game Master</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Roboto', sans-serif;
+        }
+        body {
+            background: #1a2a32;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        /* kontener główny */
+        .app-container {
+            max-width: 1200px;
+            width: 100%;
+            background: #f5f5f5;
+            border-radius: 32px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.3);
+            overflow: hidden;
+            padding: 20px 24px 32px;
+        }
+        /* widoki */
+        .view {
+            display: none;
+            animation: fadeIn 0.2s ease;
+        }
+        .view.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        /* nagłówki */
+        h1, h2, h3 {
+            margin-top: 0;
+            color: #1e2a32;
+        }
+        .badge {
+            background: #e0e7ff;
+            color: #1e3a8a;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+        /* listy i karty */
+        .players-list, .round-players {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin: 20px 0;
+        }
+        .player-card {
+            background: white;
+            border-radius: 24px;
+            padding: 12px 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            flex: 1 1 180px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-left: 8px solid;
+        }
+        .player-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .player-score {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e66;
+        }
+        button {
+            background: #2c3e66;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s linear;
+        }
+        button.danger {
+            background: #b91c1c;
+        }
+        button.secondary {
+            background: #4b5563;
+        }
+        button.warning {
+            background: #e68a2e;
+        }
+        button.small {
+            padding: 5px 12px;
+            font-size: 0.8rem;
+        }
+        button:hover {
+            filter: brightness(1.05);
+            transform: scale(0.97);
+        }
+        .flex-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin: 15px 0;
+        }
+        .card-stack {
+            background: #fff3e0;
+            border-radius: 28px;
+            padding: 12px 16px;
+            margin: 12px 0;
+        }
+        .card-tag {
+            background: #e9eef3;
+            border-radius: 32px;
+            padding: 6px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px 8px 5px 0;
+        }
+        .opponent-section {
+            background: white;
+            border-radius: 28px;
+            padding: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .side-toggle {
+            background: #d1d5db;
+            border-radius: 60px;
+            display: inline-flex;
+            padding: 4px;
+        }
+        .side-option {
+            padding: 6px 20px;
+            border-radius: 60px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .side-option.active {
+            background: #f5f5f5;
+            color: #111;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-card {
+            background: white;
+            max-width: 400px;
+            width: 90%;
+            border-radius: 36px;
+            padding: 24px;
+            text-align: center;
+        }
+        hr {
+            margin: 20px 0;
+        }
+        .winner-badge {
+            background: gold;
+            color: #2c3e66;
+            border-radius: 30px;
+            padding: 5px 12px;
+            font-weight: bold;
+        }
+        @media (max-width: 700px) {
+            .app-container { padding: 16px; }
+            .player-card { flex: 1 1 140px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container" id="app">
+    <!-- ==================== WIDOK: LOBBY ==================== -->
+    <div id="lobbyView" class="view active">
+        <h1>🃟 UNO Flip Scorekeeper</h1>
+        <p>Dodaj graczy, ustaw cel i rozpocznij turniej.</p>
+        <div class="flex-row">
+            <input type="text" id="newPlayerName" placeholder="Nazwa gracza" style="flex:2; padding:10px; border-radius:60px; border:1px solid #ccc;">
+            <button id="addPlayerBtn">➕ Dodaj</button>
+        </div>
+        <div id="lobbyPlayersList" class="players-list"></div>
+        <div class="flex-row">
+            <label style="font-weight:bold;">🏆 Cel punktowy:</label>
+            <select id="targetScoreSelect">
+                <option value="500">500 pkt</option>
+                <option value="1000">1000 pkt</option>
+                <option value="custom">Custom</option>
+            </select>
+            <input type="number" id="customTarget" placeholder="Wpisz cel" style="width:120px; display:none;">
+        </div>
+        <button id="startGameBtn" style="background:#0f5c3e; padding:12px 24px; font-size:1.1rem;">🎲 Rozpocznij grę</button>
+        <p style="margin-top:20px; font-size:0.8rem;">✔️ Minimum 2 graczy | Punkty naliczane po każdej rundzie</p>
+    </div>
+
+    <!-- ==================== WIDOK: RUNDA ==================== -->
+    <div id="roundView" class="view">
+        <button id="backToLobbyFromRound" class="secondary small">🏠 Lobby</button>
+        <h2>⚡ Runda – kto wygrywa?</h2>
+        <div class="flex-row" id="winnerButtons"></div>
+        <div class="flex-row" style="justify-content: space-between;">
+            <div class="side-toggle" id="sideToggle">
+                <span data-side="light" class="side-option active">☀️ Light Side</span>
+                <span data-side="dark" class="side-option">🌙 Dark Side</span>
+            </div>
+            <span class="badge" id="roundSideLabel">☀️ Punktacja Light</span>
+        </div>
+        <div id="opponentsContainer"></div>
+        <div class="flex-row">
+            <button id="finishRoundBtn" style="background:#1d6f2f;">🏁 Zakończ rundę</button>
+            <button id="cancelRoundBtn" class="secondary">Anuluj</button>
+        </div>
+    </div>
+
+    <!-- ==================== WIDOK: TABELA WYNIKÓW ==================== -->
+    <div id="scoreboardView" class="view">
+        <div class="flex-row" style="justify-content: space-between;">
+            <h2>📊 Tablica wyników</h2>
+            <button id="resetGameBtn" class="warning small">🔄 Resetuj wyniki</button>
+        </div>
+        <div id="scoreTable"></div>
+        <div id="gameWinnerMessage" style="font-weight:bold; margin: 15px 0;"></div>
+        <div class="flex-row">
+            <button id="newRoundBtn" style="background:#1f6392;">➕ Nowa runda</button>
+            <button id="fullResetBtn" class="danger">❌ Całkowity reset (gracze)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- STAŁE PUNKTACJI (zgodne z instrukcją UNO Flip) ----------
+    const POINTS = {
+        light: {
+            number: (v) => v,
+            draw_one: 10,
+            reverse: 20,
+            skip: 20,
+            flip: 20,
+            wild: 40,
+            wild_draw_two: 50
+        },
+        dark: {
+            number: (v) => v,
+            draw_five: 20,
+            reverse: 20,
+            skip_everyone: 30,
+            flip: 20,
+            wild: 40,
+            wild_draw_color: 60
+        }
+    };
+
+    // ---------- GLOBALNY STAN ----------
+    let gameState = {
+        targetScore: 500,
+        players: [],       // { id, name, color, totalScore }
+        currentRound: {
+            winnerId: null,
+            side: 'light',
+            opponentsCards: {}  // { playerId: [{type, value, actionName}] }
+        }
+    };
+
+    let nextId = 1;
+    const colorPalette = ['#f97316', '#3b82f6', '#10b981', '#eab308', '#ec489a', '#8b5cf6', '#ef4444', '#06b6d4'];
+
+    // ---------- POMOCNICZE ----------
+    function saveToLocal() {
+        localStorage.setItem('unoFlipScore', JSON.stringify({
+            players: gameState.players,
+            targetScore: gameState.targetScore,
+            nextId: nextId
+        }));
+    }
+    function loadFromLocal() {
+        const data = localStorage.getItem('unoFlipScore');
+        if (data) {
+            try {
+                const parsed = JSON.parse(data);
+                gameState.players = parsed.players || [];
+                gameState.targetScore = parsed.targetScore || 500;
+                nextId = parsed.nextId || 1;
+                if(gameState.players.length) renderLobbyPlayers();
+            } catch(e) {}
+        }
+    }
+
+    function getCardValue(card, side) {
+        if (card.type === 'number') {
+            return POINTS[side].number(card.value);
+        } else {
+            const action = card.actionName;
+            return POINTS[side][action] || 0;
+        }
+    }
+
+    function calculateHandTotal(cards, side) {
+        if (!cards || !cards.length) return 0;
+        return cards.reduce((sum, card) => sum + getCardValue(card, side), 0);
+    }
+
+    function generatePlayerColor(index) {
+        return colorPalette[index % colorPalette.length];
+    }
+
+    // ---------- RENDER LOBBY ----------
+    function renderLobbyPlayers() {
+        const container = document.getElementById('lobbyPlayersList');
+        if (!container) return;
+        if (gameState.players.length === 0) {
+            container.innerHTML = '<p style="color:gray;">Brak graczy – dodaj przynajmniej dwóch</p>';
+            return;
+        }
+        container.innerHTML = gameState.players.map(p => `
+            <div class="player-card" style="border-left-color: ${p.color}">
+                <span class="player-name">${escapeHtml(p.name)}</span>
+                <button class="small remove-player-btn" data-id="${p.id}">🗑️</button>
+            </div>
+        `).join('');
+        document.querySelectorAll('.remove-player-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = btn.getAttribute('data-id');
+                gameState.players = gameState.players.filter(p => p.id != id);
+                if(gameState.players.length === 0) renderLobbyPlayers();
+                else renderLobbyPlayers();
+                saveToLocal();
+            });
+        });
+    }
+
+    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+    // ---------- RUNDA: UI ----------
+    function buildRoundUI() {
+        const winnerContainer = document.getElementById('winnerButtons');
+        const opponentsDiv = document.getElementById('opponentsContainer');
+        if (!gameState.players.length) return;
+
+        // Przyciski zwycięzcy
+        winnerContainer.innerHTML = gameState.players.map(p => `
+            <button class="winner-choice ${gameState.currentRound.winnerId === p.id ? 'winner-badge' : ''}" data-id="${p.id}" style="background:${gameState.currentRound.winnerId === p.id ? '#fbbf24' : '#2c3e66'}">🏆 ${escapeHtml(p.name)}</button>
+        `).join('');
+        document.querySelectorAll('.winner-choice').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const wid = btn.getAttribute('data-id');
+                gameState.currentRound.winnerId = wid;
+                buildRoundUI();  // odświeżenie kolorów
+            });
+        });
+
+        // lista przeciwników (wszyscy oprócz zwycięzcy)
+        const winnerId = gameState.currentRound.winnerId;
+        const opponents = gameState.players.filter(p => p.id != winnerId);
+        if (opponents.length === 0 && gameState.players.length > 0) {
+            opponentsDiv.innerHTML = `<div class="card-stack">⚠️ Wybierz zwycięzcę rundy, aby dodać karty przeciwników.</div>`;
+            return;
+        }
+        opponentsDiv.innerHTML = '';
+        for (let opp of opponents) {
+            const cardsList = gameState.currentRound.opponentsCards[opp.id] || [];
+            const totalPoints = calculateHandTotal(cardsList, gameState.currentRound.side);
+            const div = document.createElement('div');
+            div.className = 'opponent-section';
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between;">
+                    <strong style="font-size:1.2rem;">😈 ${escapeHtml(opp.name)}</strong>
+                    <span>🔢 Punkty: <b id="total-${opp.id}">${totalPoints}</b></span>
+                </div>
+                <div id="cards-${opp.id}" style="margin: 10px 0;">
+                    ${cardsList.map((card, idx) => `<span class="card-tag">${card.type === 'number' ? card.value : card.actionName.toUpperCase().replace('_',' ')} <button class="small remove-card" data-player="${opp.id}" data-cardidx="${idx}">✖️</button></span>`).join('')}
+                </div>
+                <div class="flex-row">
+                    <select id="cardType-${opp.id}" style="border-radius:40px; padding:6px;">
+                        <option value="number">🔢 Numer (1-9)</option>
+                        ${gameState.currentRound.side === 'light' ? 
+                            `<option value="draw_one">➕ Draw One</option>
+                             <option value="reverse">🔄 Reverse</option>
+                             <option value="skip">⏭️ Skip</option>
+                             <option value="flip">🃟 Flip</option>
+                             <option value="wild">🌈 Wild</option>
+                             <option value="wild_draw_two">🌈 Wild Draw Two</option>` : 
+                            `<option value="draw_five">➕➕ Draw Five</option>
+                             <option value="reverse">🔄 Reverse</option>
+                             <option value="skip_everyone">⏸️ Skip Everyone</option>
+                             <option value="flip">🃟 Flip</option>
+                             <option value="wild">🌈 Wild</option>
+                             <option value="wild_draw_color">🌈 Wild Draw Color</option>`}
+                    </select>
+                    <input type="number" id="cardNum-${opp.id}" placeholder="1-9" value="5" style="width:70px;" ${gameState.currentRound.side === 'light' ? '' : ''}>
+                    <button class="small add-card-btn" data-player="${opp.id}">➕ Dodaj kartę</button>
+                </div>
+            `;
+            opponentsDiv.appendChild(div);
+            // eventy do usuwania kart
+            div.querySelectorAll('.remove-card').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const pid = btn.getAttribute('data-player');
+                    const idx = parseInt(btn.getAttribute('data-cardidx'));
+                    const list = gameState.currentRound.opponentsCards[pid] || [];
+                    list.splice(idx, 1);
+                    gameState.currentRound.opponentsCards[pid] = list;
+                    buildRoundUI();
+                });
+            });
+            const addBtn = div.querySelector('.add-card-btn');
+            addBtn.addEventListener('click', () => {
+                const select = div.querySelector(`#cardType-${opp.id}`);
+                const cardType = select.value;
+                let newCard = null;
+                if (cardType === 'number') {
+                    const numVal = parseInt(div.querySelector(`#cardNum-${opp.id}`).value);
+                    if (!isNaN(numVal) && numVal >=1 && numVal <=9) newCard = { type: 'number', value: numVal };
+                    else newCard = { type: 'number', value: 5 };
+                } else {
+                    newCard = { type: 'action', actionName: cardType };
+                }
+                if (newCard) {
+                    if (!gameState.currentRound.opponentsCards[opp.id]) gameState.currentRound.opponentsCards[opp.id] = [];
+                    gameState.currentRound.opponentsCards[opp.id].push(newCard);
+                    buildRoundUI();
+                }
+            });
+        }
+    }
+
+    // ---------- PRZELICZANIE RUNDY (dodanie punktów) ----------
+    function finishRound() {
+        const winnerId = gameState.currentRound.winnerId;
+        if (!winnerId) { alert("Wybierz zwycięzcę rundy!"); return; }
+        const side = gameState.currentRound.side;
+        let totalRoundPoints = 0;
+        for (let p of gameState.players) {
+            if (p.id != winnerId) {
+                const cards = gameState.currentRound.opponentsCards[p.id] || [];
+                const handValue = calculateHandTotal(cards, side);
+                totalRoundPoints += handValue;
+            }
+        }
+        const winnerIndex = gameState.players.findIndex(p => p.id == winnerId);
+        if (winnerIndex !== -1) {
+            gameState.players[winnerIndex].totalScore += totalRoundPoints;
+        }
+        // sprawdzenie zwycięstwa
+        saveToLocal();
+        // czyszczenie currentRound
+        gameState.currentRound = {
+            winnerId: null,
+            side: 'light',
+            opponentsCards: {}
+        };
+        showScoreboard();
+    }
+
+    // ---------- WIDOKI ----------
+    function showLobby() {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('lobbyView').classList.add('active');
+        renderLobbyPlayers();
+    }
+    function showRound() {
+        if (gameState.players.length < 2) { alert("Dodaj przynajmniej 2 graczy w lobby."); showLobby(); return; }
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('roundView').classList.add('active');
+        if (!gameState.currentRound.opponentsCards) gameState.currentRound.opponentsCards = {};
+        buildRoundUI();
+
+        const lightOpt = document.querySelector('[data-side="light"]');
+        const darkOpt = document.querySelector('[data-side="dark"]');
+        const updateSideUI = () => {
+            if (gameState.currentRound.side === 'light') {
+                lightOpt.classList.add('active'); darkOpt.classList.remove('active');
+                document.getElementById('roundSideLabel').innerHTML = '☀️ Punktacja Light Side';
+            } else {
+                darkOpt.classList.add('active'); lightOpt.classList.remove('active');
+                document.getElementById('roundSideLabel').innerHTML = '🌙 Punktacja Dark Side';
+            }
+            buildRoundUI(); // odświeżenie selectów
+        };
+        lightOpt.onclick = () => { gameState.currentRound.side = 'light'; updateSideUI(); };
+        darkOpt.onclick = () => { gameState.currentRound.side = 'dark'; updateSideUI(); };
+        updateSideUI();
+    }
+    function showScoreboard() {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('scoreboardView').classList.add('active');
+        renderScoreboard();
+    }
+
+    function renderScoreboard() {
+        const sorted = [...gameState.players].sort((a,b) => b.totalScore - a.totalScore);
+        const winnerThreshold = gameState.targetScore;
+        let winnerName = null;
+        for (let p of sorted) if (p.totalScore >= winnerThreshold) { winnerName = p.name; break; }
+        const container = document.getElementById('scoreTable');
+        container.innerHTML = `<table style="width:100%; border-collapse:collapse;">
+            <tr style="background:#e2e8f0;"><th>#</th><th>Gracz</th><th>Wynik</th></tr>
+            ${sorted.map((p, idx) => `<tr style="border-bottom:1px solid #ddd;"><td>${idx+1}</td><td><span style="display:inline-block; width:14px; height:14px; background:${p.color}; border-radius:50%; margin-right:8px;"></span>${escapeHtml(p.name)}</td><td><b>${p.totalScore}</b> pkt</td></tr>`).join('')}
+        </table>`;
+        const msgDiv = document.getElementById('gameWinnerMessage');
+        if (winnerName) msgDiv.innerHTML = `<div style="background:#fef9c3; border-radius:60px; padding:10px;">🏆 ZWYCIĘZCA: ${escapeHtml(winnerName)} 🏆<br>Osiągnięto ${winnerThreshold} pkt!</div>`;
+        else msgDiv.innerHTML = `🎯 Cel: ${winnerThreshold} pkt – jeszcze nikt nie przekroczył.`;
+    }
+
+    function resetScoresKeepPlayers() {
+        if (confirm('Reset wyników? Gracze pozostaną na liście, ale punkty zostaną wyzerowane.')) {
+            for (let p of gameState.players) p.totalScore = 0;
+            saveToLocal();
+            renderScoreboard();
+            showScoreboard();
+        }
+    }
+    function fullReset() {
+        if (confirm('Czy na pewno chcesz usunąć wszystkich graczy i rozpocząć od nowa?')) {
+            gameState.players = [];
+            gameState.targetScore = 500;
+            gameState.currentRound = { winnerId: null, side: 'light', opponentsCards: {} };
+            nextId = 1;
+            saveToLocal();
+            showLobby();
+        }
+    }
+
+    // ---------- START & ZDARZENIA ----------
+    document.getElementById('addPlayerBtn').addEventListener('click', () => {
+        const nameInput = document.getElementById('newPlayerName');
+        const name = nameInput.value.trim();
+        if (name === "") return alert("Wpisz nazwę gracza");
+        const newId = (nextId++).toString();
+        gameState.players.push({
+            id: newId,
+            name: name,
+            color: generatePlayerColor(gameState.players.length),
+            totalScore: 0
+        });
+        nameInput.value = "";
+        renderLobbyPlayers();
+        saveToLocal();
+    });
+    document.getElementById('targetScoreSelect').addEventListener('change', (e) => {
+        const customInput = document.getElementById('customTarget');
+        if (e.target.value === 'custom') {
+            customInput.style.display = 'inline-block';
+            gameState.targetScore = parseInt(customInput.value) || 500;
+        } else {
+            customInput.style.display = 'none';
+            gameState.targetScore = parseInt(e.target.value);
+        }
+    });
+    document.getElementById('customTarget').addEventListener('input', (e) => {
+        if (document.getElementById('targetScoreSelect').value === 'custom')
+            gameState.targetScore = parseInt(e.target.value) || 500;
+    });
+    document.getElementById('startGameBtn').addEventListener('click', () => {
+        if (gameState.players.length < 2) return alert("Dodaj co najmniej 2 graczy");
+        if (gameState.targetScore <= 0) gameState.targetScore = 500;
+        saveToLocal();
+        showRound();
+    });
+    document.getElementById('finishRoundBtn').addEventListener('click', finishRound);
+    document.getElementById('cancelRoundBtn').addEventListener('click', () => showScoreboard());
+    document.getElementById('newRoundBtn').addEventListener('click', () => showRound());
+    document.getElementById('resetGameBtn').addEventListener('click', resetScoresKeepPlayers);
+    document.getElementById('fullResetBtn').addEventListener('click', fullReset);
+    document.getElementById('backToLobbyFromRound').addEventListener('click', () => showLobby());
+
+    loadFromLocal();
+    if (gameState.players.length === 0) showLobby();
+    else showScoreboard();
+</script>
+</body>
+</html>
