@@ -255,8 +255,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.85rem;
-            font-weight: 900;
+            font-size: 1.2rem;
             flex-shrink: 0;
             color: white;
         }
@@ -694,10 +693,7 @@
     <!-- ==================== WIDOK 1: LOBBY ==================== -->
     <div id="lobbyView" class="view active">
         <div class="app-header">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/UNO_Logo.svg/3840px-UNO_Logo.svg.png" class="app-logo" style="
-    max-width: 15%;
-    place-self: center;
-"></img>
+            <span class="app-logo">🃟</span>
             <div class="app-title">UNO Flip</div>
             <div class="app-subtitle">Scorekeeper · Game Master</div>
         </div>
@@ -811,7 +807,34 @@
         wild_draw_color: 'Wild Draw Color +60'
     };
 
-    // Lista wszystkich dostępnych presetów (w kolejności wyświetlania)
+    // ==================== AVATARY DLA PREDEFINIOWANYCH GRACZY ====================
+    const AVATAR_MAP = {
+        'Łukasz': { emoji: '👑', color: '#6d28d9' },
+        'Andziaks': { emoji: '🥵', color: '#ea580c' },
+        'Dajusia': { emoji: '👧', color: '#ec4899' },
+        'Mama': { emoji: '🦸‍♀️', color: '#8b5cf6' },
+        'Kinga': { emoji: '👱‍♀️', color: '#fbbf24' },
+        'Kamil': { emoji: '🐼', color: '#10b981' }
+    };
+
+    const FALLBACK_EMOJIS = ['😀', '😎', '🥳', '😈', '👻', '🤖', '🐧', '🦄', '🍕', '🎸', '⚡', '🔥'];
+    
+    function getAvatar(name, existingColors = []) {
+        // Dla predefiniowanych graczy – zwróć własny avatar
+        if (AVATAR_MAP[name]) {
+            return AVATAR_MAP[name];
+        }
+        // Dla nowych graczy – losowy emoji + unikalny kolor
+        const fallbackColors = ['#3b82f6', '#ef4444', '#f97316', '#06b6d4', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b'];
+        // Wybierz kolor, który nie jest już użyty (o ile to możliwe)
+        let availableColors = fallbackColors.filter(c => !existingColors.includes(c));
+        if (availableColors.length === 0) availableColors = fallbackColors;
+        const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+        const randomEmoji = FALLBACK_EMOJIS[Math.floor(Math.random() * FALLBACK_EMOJIS.length)];
+        return { emoji: randomEmoji, color: randomColor };
+    }
+
+    // Lista wszystkich dostępnych presetów
     const ALL_PRESETS = ['Łukasz', 'Andziaks', 'Dajusia', 'Mama', 'Kinga', 'Kamil'];
     const PLAYER_COLORS = ['#8b5cf6','#ec4899','#f97316','#10b981','#3b82f6','#f59e0b','#ef4444','#06b6d4'];
 
@@ -830,27 +853,29 @@
                 gameState.targetScore = p.targetScore || 500;
                 nextId = p.nextId || 1;
                 if (gameState.players.length) renderLobbyPlayers();
-                renderPresetChips(); // odśwież presety po załadowaniu
+                renderPresetChips();
             }
         } catch(e) {}
-    }
-
-    function getInitials(name) {
-        return name.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
     }
 
     function addPlayerToState(name) {
         if (!name || !name.trim()) return false;
         const trimmed = name.trim();
         if (gameState.players.some(p => p.name === trimmed)) return false;
+        
+        // Pobierz już używane kolory avatarów
+        const usedColors = gameState.players.map(p => p.avatarColor).filter(c => c);
+        const avatar = getAvatar(trimmed, usedColors);
+        
         gameState.players.push({
             id: (nextId++).toString(),
             name: trimmed,
-            color: PLAYER_COLORS[gameState.players.length % PLAYER_COLORS.length],
+            avatarEmoji: avatar.emoji,
+            avatarColor: avatar.color,
             totalScore: 0
         });
         renderLobbyPlayers();
-        renderPresetChips(); // ODŚWIEŻ PRESETY – dodany gracz znika z listy
+        renderPresetChips();
         saveToLocal();
         return true;
     }
@@ -858,19 +883,15 @@
     function removePlayerById(id) {
         gameState.players = gameState.players.filter(p => p.id !== id);
         renderLobbyPlayers();
-        renderPresetChips(); // ODŚWIEŻ PRESETY – usunięty gracz wraca na listę
+        renderPresetChips();
         saveToLocal();
     }
 
-    // RENDEROWANIE DYNAMICZNYCH PRESETÓW
     function renderPresetChips() {
         const container = document.getElementById('presetChipsContainer');
         if (!container) return;
         
-        // Pobierz nazwy już dodanych graczy
         const addedNames = gameState.players.map(p => p.name);
-        
-        // Filtruj presety – pokaż tylko tych, których jeszcze nie ma
         const availablePresets = ALL_PRESETS.filter(preset => !addedNames.includes(preset));
         
         if (availablePresets.length === 0) {
@@ -882,7 +903,6 @@
             <button class="preset-chip" data-preset="${preset.replace(/[&<>"']/g, '')}">${preset}</button>
         `).join('');
         
-        // Przypisz eventy do nowych przycisków
         container.querySelectorAll('.preset-chip').forEach(btn => {
             btn.addEventListener('click', () => {
                 addPlayerToState(btn.getAttribute('data-preset'));
@@ -940,7 +960,7 @@
         }
         container.innerHTML = gameState.players.map(p => `
             <div class="player-card-lobby">
-                <div class="player-avatar" style="background:${p.color}">${escapeHtml(getInitials(p.name))}</div>
+                <div class="player-avatar" style="background:${p.avatarColor || '#8b5cf6'}">${p.avatarEmoji || '👤'}</div>
                 <span class="player-name-lobby">${escapeHtml(p.name)}</span>
                 <button class="btn-remove remove-player-btn" data-id="${p.id}" title="Usuń">✕</button>
             </div>
@@ -957,7 +977,7 @@
         if (!container) return;
         container.innerHTML = gameState.players.map(p => `
             <button class="winner-btn-card" data-id="${p.id}">
-                <div class="player-avatar" style="background:${p.color}">${escapeHtml(getInitials(p.name))}</div>
+                <div class="player-avatar" style="background:${p.avatarColor || '#8b5cf6'}">${p.avatarEmoji || '👤'}</div>
                 <span class="winner-btn-name">${escapeHtml(p.name)}</span>
                 <span class="winner-btn-score">${p.totalScore} pkt</span>
                 <span class="trophy-icon">🏆</span>
@@ -1045,7 +1065,7 @@
             <div class="player-score-card">
                 <div class="score-card-top">
                     <span class="rank-badge">${RANK_ICONS[idx] || (idx+1)}</span>
-                    <div class="player-avatar" style="background:${p.color}; width:32px; height:32px; font-size:0.75rem;">${escapeHtml(getInitials(p.name))}</div>
+                    <div class="player-avatar" style="background:${p.avatarColor || '#8b5cf6'}; width:32px; height:32px; font-size:1rem;">${p.avatarEmoji || '👤'}</div>
                     <span class="score-name">${escapeHtml(p.name)}</span>
                     <span class="score-points">${p.totalScore} pkt</span>
                 </div>
@@ -1114,7 +1134,7 @@
             Object.assign(gameState, { players: [], targetScore: 500, currentWinnerId: null, currentCards: [], currentSide: 'light' });
             nextId = 1; 
             saveToLocal(); 
-            renderPresetChips(); // przywróć pełną listę presetów
+            renderPresetChips();
             showLobby();
         }
     });
